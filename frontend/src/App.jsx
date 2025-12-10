@@ -7,10 +7,12 @@ import { AppLayout } from './components/Layout/AppLayout';
 import {
     OwnerDashboard,
     StaffDashboard,
-    CustomerDashboard,
-    ProductListPage,
-    OrderListPage
+    CustomerDashboard
 } from './pages/dashboard/Dashboards';
+import ProductListPage from './pages/products/ProductListPage';
+import ProductFormPage from './pages/products/ProductFormPage';
+import OrderListPage from './pages/orders/OrderListPage';
+import PlaceOrderPage from './pages/orders/PlaceOrderPage';
 
 function App() {
     return (
@@ -34,38 +36,37 @@ function App() {
                         <Route path="/customer" />
                     </Route>
 
-                    {/* Shared Routes */}
-                    <Route element={<ProtectedRoute allowedRoles={['OWNER', 'STAFF', 'CUSTOMER']}><AppLayout /></ProtectedRoute>}>
-                        {/* Note: The above wrapper won't render children automatically if we don't nest Routes properly 
-                 or use Outlet in AppLayout (which we validated). 
-                 But here we are wrapping specific page components. 
-                 Better pattern for shared routes:
-             */}
-                    </Route>
+                    {/* Product Routes */}
+                    <Route path="/products" element={
+                        <ProtectedRoute allowedRoles={['OWNER', 'STAFF', 'CUSTOMER']}>
+                            <AppLayout><ProductListPage /></AppLayout>
+                        </ProtectedRoute>
+                    } />
 
-                    {/* A cleaner way with the current ProtectedRoute implementation: */}
+                    <Route path="/products/new" element={
+                        <ProtectedRoute allowedRoles={['OWNER', 'STAFF']}>
+                            <AppLayout><ProductFormPage /></AppLayout>
+                        </ProtectedRoute>
+                    } />
 
-                    <Route
-                        path="/products"
-                        element={
-                            <ProtectedRoute allowedRoles={['OWNER', 'STAFF', 'CUSTOMER']}>
-                                <AppLayout>
-                                    <ProductListPage />
-                                </AppLayout>
-                            </ProtectedRoute>
-                        }
-                    />
+                    <Route path="/products/:id/edit" element={
+                        <ProtectedRoute allowedRoles={['OWNER', 'STAFF']}>
+                            <AppLayout><ProductFormPage /></AppLayout>
+                        </ProtectedRoute>
+                    } />
 
-                    <Route
-                        path="/orders"
-                        element={
-                            <ProtectedRoute allowedRoles={['OWNER', 'STAFF', 'CUSTOMER']}>
-                                <AppLayout>
-                                    <OrderListPage />
-                                </AppLayout>
-                            </ProtectedRoute>
-                        }
-                    />
+                    {/* Order Routes */}
+                    <Route path="/orders" element={
+                        <ProtectedRoute allowedRoles={['OWNER', 'STAFF', 'CUSTOMER']}>
+                            <AppLayout><OrderListPage /></AppLayout>
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/orders/new" element={
+                        <ProtectedRoute allowedRoles={['CUSTOMER']}>
+                            <AppLayout><PlaceOrderPage /></AppLayout>
+                        </ProtectedRoute>
+                    } />
 
                     <Route path="/" element={<Navigate to="/login" replace />} />
                     <Route path="*" element={<Navigate to="/login" replace />} />

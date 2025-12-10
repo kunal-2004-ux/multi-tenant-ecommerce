@@ -53,6 +53,7 @@ export const Sidebar = () => {
                     <>
                         <NavLink to="/customer" label="Dashboard" />
                         <NavLink to="/products" label="Browse Products" />
+                        <NavLink to="/orders/new" label="Place Order" />
                         <NavLink to="/orders" label="My Orders" />
                     </>
                 )}
