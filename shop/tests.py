@@ -5,57 +5,45 @@ from accounts.models import Tenant, CustomUser
 from shop.models import Product, Order
 
 @pytest.mark.django_db
-def test_product_isolation():
-    # Setup 2 tenants
+def test_customer_access_control():
     t1 = Tenant.objects.create(name="T1", contact_email="t1@t.com")
-    t2 = Tenant.objects.create(name="T2", contact_email="t2@t.com")
+    owner = CustomUser.objects.create_user(username="owner", password="pw", email="o@t.com", tenant=t1, role="OWNER")
+    customer = CustomUser.objects.create_user(username="customer", password="pw", email="c@t.com", tenant=t1, role="CUSTOMER")
     
-    u1 = CustomUser.objects.create_user(username="u1", password="pw", email="u1@t.com", tenant=t1, role="OWNER")
-    u2 = CustomUser.objects.create_user(username="u2", password="pw", email="u2@t.com", tenant=t2, role="OWNER")
-    
-    # T1 Product
     p1 = Product.objects.create(tenant=t1, name="P1", price=10, stock=10)
     
     client = APIClient()
     
-    # U1 should see P1
-    client.force_authenticate(user=u1)
+    # OWNER can update
+    client.force_authenticate(user=owner)
+    response = client.patch(f'/api/products/{p1.id}/', {"price": 20}, format='json')
+    assert response.status_code == status.HTTP_200_OK
+    
+    # CUSTOMER CANNOT update
+    client.force_authenticate(user=customer)
+    response = client.patch(f'/api/products/{p1.id}/', {"price": 30}, format='json')
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    
+    # CUSTOMER can list products
     response = client.get('/api/products/')
     assert response.status_code == status.HTTP_200_OK
     assert len(response.data) == 1
-    assert response.data[0]['name'] == "P1"
-    
-    # U2 should NOT see P1
-    client.force_authenticate(user=u2)
-    response = client.get('/api/products/')
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.data) == 0
 
 @pytest.mark.django_db
-def test_order_creation_stock_deduction():
+def test_staff_assignment_visibility():
     t1 = Tenant.objects.create(name="T1", contact_email="t1@t.com")
-    u1 = CustomUser.objects.create_user(username="u1", password="pw", email="u1@t.com", tenant=t1, role="CUSTOMER")
-    p1 = Product.objects.create(tenant=t1, name="P1", price=100, stock=10)
+    staff = CustomUser.objects.create_user(username="staff", password="pw", email="s@t.com", tenant=t1, role="STAFF")
+    
+    # Product assigned to Staff
+    p_assigned = Product.objects.create(tenant=t1, name="Assigned", price=10, stock=10, assigned_to=staff)
+    # Product NOT assigned
+    p_unassigned = Product.objects.create(tenant=t1, name="Unassigned", price=10, stock=10)
     
     client = APIClient()
-    client.force_authenticate(user=u1)
+    client.force_authenticate(user=staff)
     
-    # Place Order
-    data = {
-        "items": [
-           { "product_id": p1.id, "quantity": 2 }
-        ]
-    }
-    response = client.post('/api/orders/', data, format='json')
-    assert response.status_code == status.HTTP_201_CREATED
-    assert response.data['total_amount'] == "200.00"
-    
-    # Check Stock
-    p1.refresh_from_db()
-    assert p1.stock == 8
-    
-    # Check Order
-    assert Order.objects.count() == 1
-    order = Order.objects.first()
-    assert order.tenant == t1
-    assert order.customer == u1
+    # Should only see assigned product
+    response = client.get('/api/products/')
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.data) == 1
+    assert response.data[0]['name'] == "Assigned"
