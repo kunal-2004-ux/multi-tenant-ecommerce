@@ -20,12 +20,13 @@ const ProductListPage = () => {
             setProducts(response.data);
             setLoading(false);
         } catch (err) {
+            console.error("Fetch Error:", err.response?.status, err.response?.data);
             setError('Failed to fetch products');
             setLoading(false);
         }
     };
 
-    const canCreate = user.role === 'OWNER' || user.role === 'STAFF'; // Staff logic might need refinement based on task
+    const canCreate = user.role === 'OWNER' || user.role === 'STAFF';
     const canEdit = user.role === 'OWNER' || user.role === 'STAFF';
 
     return (
@@ -46,7 +47,7 @@ const ProductListPage = () => {
             {error && <div className="bg-red-100 text-red-700 p-3 rounded">{error}</div>}
 
             {!loading && !error && (
-                <div className="bg-white shadow rounded-lg overflow-hidden">
+                <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>

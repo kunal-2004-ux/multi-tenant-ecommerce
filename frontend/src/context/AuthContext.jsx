@@ -3,72 +3,47 @@ import client from '../api/client';
 
 const AuthContext = createContext();
 
+export const useAuth = () => useContext(AuthContext);
+
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [accessToken, setAccessToken] = useState(localStorage.getItem('accessToken'));
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
-        if (accessToken && storedUser) {
-            try {
-                setUser(JSON.parse(storedUser));
-            } catch (e) {
-                console.error("Failed to parse user", e);
-                logout();
-            }
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
         }
         setLoading(false);
     }, []);
 
     const login = async (username, password) => {
-        try {
-            const response = await client.post('/api/auth/login/', { username, password });
-            const { access, refresh } = response.data;
+        const response = await client.post('/auth/login/', { username, password });
 
-            // We need to decode the token to get role/tenant info, OR the backend should return it.
-            // Based on our implementation, backend only returns tokens.
-            // We should ideally fetch user profile or decode token. 
-            // WITHOUT decoding lib, we can't reliably get role.
-            // Let's assume for this stage we decode base64 manually or assume backend sends it. 
-            // The instruction said: "Store user info (role, tenant_id, username) under user"
-            // Backend (Stage 2) returns: access, refresh. Token has claims.
-            // Let's do a simple base64 decode for now to get the payload.
+        localStorage.setItem('accessToken', response.data.access);
+        localStorage.setItem('refreshToken', response.data.refresh);
 
-            const payload = JSON.parse(atob(access.split('.')[1]));
+        const userData = {
+            username: response.data.username,
+            role: response.data.role,
+            tenant_id: response.data.tenant_id
+        };
 
-            const userData = {
-                username: username, // approximate, payload might differentiate
-                role: payload.role || 'CUSTOMER',
-                tenant_id: payload.tenant_id
-            };
-
-            localStorage.setItem('accessToken', access);
-            localStorage.setItem('refreshToken', refresh);
-            localStorage.setItem('user', JSON.stringify(userData));
-
-            setAccessToken(access);
-            setUser(userData);
-            return true;
-        } catch (error) {
-            console.error("Login failed", error);
-            throw error;
-        }
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+        return userData; // Return user data for redirect logic
     };
 
     const logout = () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
-        setAccessToken(null);
         setUser(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, accessToken, login, logout, isAuthenticated: !!user, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, loading }}>
             {!loading && children}
         </AuthContext.Provider>
     );
 };
-
-export const useAuth = () => useContext(AuthContext);

@@ -28,7 +28,7 @@ const LoginPage = () => {
                 else navigate('/customer');
             }
         } catch (err) {
-            setError('Invalid credentials');
+            setError(err.response?.data?.detail || err.message || 'Login failed');
         }
     };
 

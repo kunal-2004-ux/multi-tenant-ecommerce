@@ -13,10 +13,11 @@ const OrderListPage = () => {
 
     const fetchOrders = async () => {
         try {
-            const response = await client.get('/orders/');
+            const response = await client.get('/api/orders/');
             setOrders(response.data);
             setLoading(false);
         } catch (err) {
+            console.error("Fetch Error:", err.response?.status, err.response?.data);
             setError('Failed to fetch orders');
             setLoading(false);
         }

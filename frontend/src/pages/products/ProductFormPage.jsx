@@ -25,7 +25,7 @@ const ProductFormPage = () => {
 
     const fetchProduct = async () => {
         try {
-            const response = await client.get(`/products/${id}/`);
+            const response = await client.get(`/api/products/${id}/`);
             setFormData({
                 name: response.data.name,
                 description: response.data.description,
@@ -34,6 +34,7 @@ const ProductFormPage = () => {
                 is_active: response.data.is_active
             });
         } catch (err) {
+            console.error("Fetch Error:", err.response?.status, err.response?.data);
             setError('Failed to fetch product details.');
         }
     };
@@ -52,13 +53,14 @@ const ProductFormPage = () => {
         setError(null);
         try {
             if (isEditMode) {
-                await client.put(`/products/${id}/`, formData);
+                await client.put(`/api/products/${id}/`, formData);
             } else {
-                await client.post('/products/', formData);
+                await client.post('/api/products/', formData);
             }
             navigate('/products');
         } catch (err) {
-            setError('Failed to save product. Check inputs.'); // Could get cleaner errors from response
+            console.error("Save Error:", err.response?.status, err.response?.data);
+            setError('Failed to save product. Check inputs.');
             setLoading(false);
         }
     };

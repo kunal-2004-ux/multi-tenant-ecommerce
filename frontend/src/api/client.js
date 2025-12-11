@@ -17,7 +17,18 @@ client.interceptors.request.use(
         }
         return config;
     },
-    (error) => Promise.reject(error)
+    (error) => {
+        console.error("API Request Error:", error);
+        return Promise.reject(error);
+    }
+);
+
+client.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        console.error("API Error:", error.response?.status, error.response?.data);
+        return Promise.reject(error);
+    }
 );
 
 export default client;

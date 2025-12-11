@@ -15,7 +15,7 @@ const PlaceOrderPage = () => {
 
     const fetchProducts = async () => {
         try {
-            const response = await client.get('/products/');
+            const response = await client.get('/api/products/');
             // Filter active products client-side for simplicity if backend returns all
             const active = response.data.filter(p => p.is_active && p.stock > 0);
             setProducts(active);
@@ -50,7 +50,7 @@ const PlaceOrderPage = () => {
         }
 
         try {
-            await client.post('/orders/', { items });
+            await client.post('/api/orders/', { items });
             alert("Order placed successfully!");
             navigate('/orders');
         } catch (err) {

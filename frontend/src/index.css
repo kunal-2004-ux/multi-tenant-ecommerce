@@ -1,3 +1,20 @@
+@import "tailwindcss";
+
+/* 
+  Tailwind v4 uses @import "tailwindcss"; 
+  @tailwind directives are deprecated but supported via postcss adapter. 
+  Since we installed @tailwindcss/postcss adapter, standard config works, 
+  BUT standard v4 way is @import "tailwindcss"; 
+  Let's stick to the user's requested syntax for compatibility with their likely mental model 
+  or what the previous steps set up. 
+  Actually, previously we used @tailwind. Let's stick to that to match the user's specific request details 
+  UNLESS v4 forces us otherwise. v4 supports @tailwind back-compat via the postcss plugin.
+*/
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+    @apply bg-slate-100 text-slate-900 font-sans;
+}
