@@ -44,16 +44,19 @@ class OrderSerializer(serializers.ModelSerializer):
             total_amount = 0
 
             for item_data in items_data:
-                product = item_data['product']
+                product_instance = item_data['product']
                 quantity = item_data['quantity']
+                
+                # Re-fetch with lock to prevent race conditions
+                product = Product.objects.select_for_update().get(id=product_instance.id)
 
                 # Validate Tenant
-                if product.tenant != tenant:
-                    raise serializers.ValidationError(f"Product {product.name} does not belong to your tenant.")
+                if product.tenant_id != tenant.id:
+                    raise serializers.ValidationError(f"Product {product.name} does not belong to this tenant")
 
                 # Validate Stock
                 if product.stock < quantity:
-                    raise serializers.ValidationError(f"Insufficient stock for {product.name}. Available: {product.stock}")
+                    raise serializers.ValidationError(f"Insufficient stock for {product.name}")
 
                 unit_price = product.price
                 line_total = unit_price * quantity

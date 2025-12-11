@@ -1,9 +1,12 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.db import transaction
+from django.contrib.auth import get_user_model
 from .models import Tenant, CustomUser
 
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+User = get_user_model()
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -14,107 +17,92 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         return token
 
-    def validate(self, attrs):
-        data = super().validate(attrs)
-        
-        data['username'] = self.user.username
-        data['role'] = self.user.role
-        data['tenant_id'] = self.user.tenant.id if self.user.tenant else None
-        
-        return data
-
-class TenantSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tenant
-        fields = ['id', 'name', 'subdomain', 'custom_domain']
-
-class OwnerResponseSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CustomUser
-        fields = ['id', 'username', 'email', 'role']
-
-class OwnerRegistrationSerializer(serializers.Serializer):
-    tenant_name = serializers.CharField(required=True)
-    contact_email = serializers.EmailField(required=True)
-    subdomain = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-    custom_domain = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-    
-    owner_username = serializers.CharField(required=True)
-    owner_email = serializers.EmailField(required=True)
-    owner_password = serializers.CharField(required=True, write_only=True)
+class RegisterOwnerSerializer(serializers.Serializer):
+    tenant_name = serializers.CharField(max_length=150)
+    subdomain = serializers.SlugField(max_length=64)
+    contact_email = serializers.EmailField()
+    owner_username = serializers.CharField(max_length=150)
+    owner_email = serializers.EmailField()
+    owner_password = serializers.CharField(write_only=True, min_length=8)
 
     def validate_subdomain(self, value):
-        if value and Tenant.objects.filter(subdomain=value).exists():
-            raise serializers.ValidationError("Subdomain already exists.")
-        return value
+        slug = value.lower()
+        if Tenant.objects.filter(subdomain__iexact=slug).exists():
+            raise serializers.ValidationError("Tenant subdomain already taken")
+        return slug
 
     def create(self, validated_data):
         with transaction.atomic():
             tenant = Tenant.objects.create(
-                name=validated_data['tenant_name'],
-                contact_email=validated_data['contact_email'],
-                subdomain=validated_data.get('subdomain'),
-                custom_domain=validated_data.get('custom_domain')
+                name=validated_data["tenant_name"],
+                contact_email=validated_data["contact_email"],
+                subdomain=validated_data["subdomain"],
             )
-
-            user = CustomUser.objects.create_user(
-                username=validated_data['owner_username'],
-                email=validated_data['owner_email'],
-                password=validated_data['owner_password'],
-                role='OWNER',
-                tenant=tenant
+            owner = User.objects.create_user(
+                username=validated_data["owner_username"],
+                email=validated_data["owner_email"],
+                password=validated_data["owner_password"],
+                tenant=tenant,
+                role="OWNER",
             )
-            return user
+        return {"tenant": tenant, "owner": owner}
 
 class CustomerRegisterSerializer(serializers.Serializer):
-    username = serializers.CharField()
+    username = serializers.CharField(max_length=150)
     email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
-    tenant_slug = serializers.CharField()
+    password = serializers.CharField(write_only=True, min_length=8)
+    tenant_slug = serializers.SlugField(max_length=64)
 
     def validate_tenant_slug(self, value):
+        slug = value.lower()
         try:
-            return Tenant.objects.get(subdomain=value)
+            tenant = Tenant.objects.get(subdomain__iexact=slug)
         except Tenant.DoesNotExist:
-            raise serializers.ValidationError("Invalid tenant identifier")
+            raise serializers.ValidationError("Tenant not found")
+        self._tenant = tenant
+        return slug
 
     def create(self, validated_data):
-        tenant = validated_data.pop("tenant_slug")
-        user = CustomUser.objects.create(
+        user = User.objects.create_user(
             username=validated_data["username"],
             email=validated_data["email"],
-            tenant=tenant,
-            role="CUSTOMER"
+            password=validated_data["password"],
+            tenant=self._tenant,
+            role="CUSTOMER",
         )
-        user.set_password(validated_data["password"])
-        user.save()
         return user
-
+    
     def to_representation(self, instance):
         return {
             "id": instance.id,
             "username": instance.username,
             "email": instance.email,
-            "tenant": instance.tenant.subdomain
+            "role": instance.role,
+            "tenant": instance.tenant.subdomain if instance.tenant else None
         }
 
 class StaffCreateSerializer(serializers.Serializer):
-    username = serializers.CharField()
+    username = serializers.CharField(max_length=150)
     email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, min_length=8)
+    make_active = serializers.BooleanField(default=False)
 
     def create(self, validated_data):
         request = self.context.get("request")
         owner = request.user
-        # create staff user under owner's tenant
-        staff = CustomUser.objects.create(
+        
+        # Ensure the user is an owner (extra safety, view also handles this)
+        if owner.role != 'OWNER':
+             raise serializers.ValidationError("Only owners can create staff.")
+
+        staff = User.objects.create_user(
             username=validated_data["username"],
             email=validated_data["email"],
-            tenant=owner.tenant,
+            password=validated_data["password"],
+            tenant=owner.tenant,  # Always derived from context
             role="STAFF",
+            is_active=validated_data.get("make_active", False),
         )
-        staff.set_password(validated_data["password"])
-        staff.save()
         return staff
 
     def to_representation(self, instance):
@@ -122,6 +110,7 @@ class StaffCreateSerializer(serializers.Serializer):
             "id": instance.id,
             "username": instance.username,
             "email": instance.email,
-            "tenant": instance.tenant.subdomain if instance.tenant else None,
             "role": instance.role,
+            "tenant": instance.tenant.subdomain if instance.tenant else None,
+            "is_active": instance.is_active
         }
