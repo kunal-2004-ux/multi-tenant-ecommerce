@@ -1,9 +1,11 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import LoginPage from './pages/auth/LoginPage';
-import ProtectedRoute from './components/common/ProtectedRoute';
+import Login from './pages/auth/Login';
+import OwnerRegister from './pages/auth/OwnerRegister';
+import ProtectedRoute from './components/ProtectedRoute'; // Fixed path
 import { AppLayout } from './components/Layout/AppLayout';
+import Home from './pages/Home';
 import {
     OwnerDashboard,
     StaffDashboard,
@@ -13,18 +15,27 @@ import ProductListPage from './pages/products/ProductListPage';
 import ProductFormPage from './pages/products/ProductFormPage';
 import OrderListPage from './pages/orders/OrderListPage';
 import PlaceOrderPage from './pages/orders/PlaceOrderPage';
+import CustomerSignup from './pages/auth/CustomerSignup';
+import OwnerCreateStaff from './pages/dashboard/OwnerCreateStaff';
 
 function App() {
     return (
         <BrowserRouter>
             <AuthProvider>
                 <Routes>
-                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register-owner" element={<OwnerRegister />} />
+                    <Route path="/signup/customer" element={<CustomerSignup />} /> {/* Moved out of AppLayout for consistent auth layout */}
 
                     {/* Owner Routes */}
                     <Route path="/owner" element={
                         <ProtectedRoute allowedRoles={['OWNER']}>
                             <AppLayout><OwnerDashboard /></AppLayout>
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/owner/create-staff" element={
+                        <ProtectedRoute allowedRoles={['OWNER']}>
+                            <AppLayout><OwnerCreateStaff /></AppLayout>
                         </ProtectedRoute>
                     } />
 
@@ -74,8 +85,8 @@ function App() {
                         </ProtectedRoute>
                     } />
 
-                    <Route path="/" element={<Navigate to="/login" replace />} />
-                    <Route path="*" element={<Navigate to="/login" replace />} />
+                    <Route path="/" element={<Home />} />
+                    <Route path="*" element={<Home />} />
                 </Routes>
             </AuthProvider>
         </BrowserRouter>

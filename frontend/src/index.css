@@ -1,24 +1,6 @@
-/* add these variables to the top of your global stylesheet */
-:root {
-  --color-bg: #f6f8fb;
-  /* page background */
-  --color-panel: #ffffff;
-  /* card/background surface */
-  --color-text: #0f1724;
-  /* primary text */
-  --color-muted: #64748b;
-  /* subdued text */
-  --color-accent: #2563eb;
-  /* primary accent (blue) */
-  --color-accent-600: #1d4ed8;
-  --color-accent-400: #60a5fa;
-  --color-success: #10b981;
-  --color-border: #e6eef8;
-  --radius-md: 12px;
-  --shadow-soft: 0 6px 20px rgba(15, 23, 36, 0.06);
-  --shadow-sm: 0 4px 14px rgba(15, 23, 36, 0.04);
-}
+@import "tailwindcss";
 
+/* small page-level helpers */
 html,
 body,
 #root {
@@ -26,28 +8,28 @@ body,
 }
 
 body {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-  background: var(--color-bg);
-  color: var(--color-text);
+  @apply bg-slate-50 text-slate-900 antialiased;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans";
 }
 
-@import "tailwindcss";
+/* small utility: center container */
+.container-max {
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
 
-/* 
-  Tailwind v4 uses @import "tailwindcss"; 
-  @tailwind directives are deprecated but supported via postcss adapter. 
-  Since we installed @tailwindcss/postcss adapter, standard config works, 
-  BUT standard v4 way is @import "tailwindcss"; 
-  Let's stick to the user's requested syntax for compatibility with their likely mental model 
-  or what the previous steps set up. 
-  Actually, previously we used @tailwind. Let's stick to that to match the user's specific request details 
-  UNLESS v4 forces us otherwise. v4 supports @tailwind back-compat via the postcss plugin.
-*/
+/* hero card shadow */
+.card-shadow {
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.06);
+  border-radius: 14px;
+  background: white;
+}
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-body {
-  @apply bg-slate-100 text-slate-900 font-sans;
+/* button subtle focus */
+.btn-primary:focus {
+  outline: 3px solid rgba(37, 99, 235, 0.12);
+  outline-offset: 2px;
 }

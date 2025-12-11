@@ -13,6 +13,7 @@ export const Sidebar = () => {
             { to: "/owner", label: "Dashboard" },
             { to: "/products", label: "Products" },
             { to: "/orders", label: "Orders" },
+            { to: "/owner/create-staff", label: "Invite Staff" },
         );
     } else if (role === "STAFF") {
         links.push(
@@ -26,6 +27,11 @@ export const Sidebar = () => {
             { to: "/products", label: "Browse Products" },
             { to: "/orders", label: "My Orders" },
             { to: "/orders/new", label: "Place Order" },
+        );
+    } else if (!user) {
+        links.push(
+            { to: "/signup/customer", label: "Sign Up" },
+            { to: "/login", label: "Login" },
         );
     }
 
