@@ -59,3 +59,31 @@ def test_login_returns_tenant_info():
     token = AccessToken(response.data['access'])
     assert token['role'] == "OWNER"
     assert token['tenant_id'] == tenant.id
+
+from django.test import TestCase
+
+class StaffCreateAPITest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.tenant = Tenant.objects.create(name="T1", contact_email="a@a.com", subdomain="t1")
+        self.owner = CustomUser.objects.create_user(username="owner1", password="pass1234", tenant=self.tenant, role="OWNER")
+        self.staff_payload = {"username": "staff1", "email": "staff1@test.com", "password": "staffpass"}
+
+    def test_owner_can_create_staff(self):
+        # login owner
+        resp = self.client.post("/api/auth/login/", {"username": "owner1", "password": "pass1234"}, format="json")
+        access = resp.data.get("access")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        res = self.client.post("/api/auth/create-staff/", self.staff_payload, format="json")
+        self.assertEqual(res.status_code, 201)
+        self.assertEqual(res.data["staff"]["username"], "staff1")
+        self.assertEqual(res.data["staff"]["role"], "STAFF")
+
+    def test_non_owner_cannot_create_staff(self):
+        # create a customer (not owner)
+        customer = CustomUser.objects.create_user(username="cust", password="custpass", tenant=self.tenant, role="CUSTOMER")
+        resp = self.client.post("/api/auth/login/", {"username": "cust", "password": "custpass"}, format="json")
+        access = resp.data.get("access")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        res = self.client.post("/api/auth/create-staff/", self.staff_payload, format="json")
+        self.assertIn(res.status_code, (401, 403))

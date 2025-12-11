@@ -97,3 +97,31 @@ class CustomerRegisterSerializer(serializers.Serializer):
             "email": instance.email,
             "tenant": instance.tenant.subdomain
         }
+
+class StaffCreateSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        owner = request.user
+        # create staff user under owner's tenant
+        staff = CustomUser.objects.create(
+            username=validated_data["username"],
+            email=validated_data["email"],
+            tenant=owner.tenant,
+            role="STAFF",
+        )
+        staff.set_password(validated_data["password"])
+        staff.save()
+        return staff
+
+    def to_representation(self, instance):
+        return {
+            "id": instance.id,
+            "username": instance.username,
+            "email": instance.email,
+            "tenant": instance.tenant.subdomain if instance.tenant else None,
+            "role": instance.role,
+        }
