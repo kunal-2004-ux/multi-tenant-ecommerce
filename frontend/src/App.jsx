@@ -22,19 +22,25 @@ function App() {
                     <Route path="/login" element={<LoginPage />} />
 
                     {/* Owner Routes */}
-                    <Route element={<ProtectedRoute allowedRoles={['OWNER']}><AppLayout><OwnerDashboard /></AppLayout></ProtectedRoute>}>
-                        <Route path="/owner" />
-                    </Route>
+                    <Route path="/owner" element={
+                        <ProtectedRoute allowedRoles={['OWNER']}>
+                            <AppLayout><OwnerDashboard /></AppLayout>
+                        </ProtectedRoute>
+                    } />
 
                     {/* Staff Routes */}
-                    <Route element={<ProtectedRoute allowedRoles={['STAFF']}><AppLayout><StaffDashboard /></AppLayout></ProtectedRoute>}>
-                        <Route path="/staff" />
-                    </Route>
+                    <Route path="/staff" element={
+                        <ProtectedRoute allowedRoles={['STAFF']}>
+                            <AppLayout><StaffDashboard /></AppLayout>
+                        </ProtectedRoute>
+                    } />
 
                     {/* Customer Routes */}
-                    <Route element={<ProtectedRoute allowedRoles={['CUSTOMER']}><AppLayout><CustomerDashboard /></AppLayout></ProtectedRoute>}>
-                        <Route path="/customer" />
-                    </Route>
+                    <Route path="/customer" element={
+                        <ProtectedRoute allowedRoles={['CUSTOMER']}>
+                            <AppLayout><CustomerDashboard /></AppLayout>
+                        </ProtectedRoute>
+                    } />
 
                     {/* Product Routes */}
                     <Route path="/products" element={

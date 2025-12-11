@@ -2,7 +2,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from .serializers import MyTokenObtainPairSerializer, OwnerRegistrationSerializer, TenantSerializer, OwnerResponseSerializer
+from .serializers import MyTokenObtainPairSerializer, OwnerRegistrationSerializer, TenantSerializer, OwnerResponseSerializer, CustomerRegisterSerializer
 
 class MyTokenObtainPairView(TokenObtainPairView):
     permission_classes = [AllowAny]
@@ -21,3 +21,13 @@ class OwnerRegistrationView(generics.GenericAPIView):
             "tenant": TenantSerializer(user.tenant).data,
             "owner": OwnerResponseSerializer(user).data
         }, status=status.HTTP_201_CREATED)
+
+class CustomerRegisterView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = CustomerRegisterSerializer  # Explicitly set
+
+    def post(self, request):
+        serializer = CustomerRegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({"customer": serializer.data}, status=status.HTTP_201_CREATED)

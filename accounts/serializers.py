@@ -14,6 +14,15 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         return token
 
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        
+        data['username'] = self.user.username
+        data['role'] = self.user.role
+        data['tenant_id'] = self.user.tenant.id if self.user.tenant else None
+        
+        return data
+
 class TenantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tenant
@@ -56,3 +65,35 @@ class OwnerRegistrationSerializer(serializers.Serializer):
                 tenant=tenant
             )
             return user
+
+class CustomerRegisterSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+    tenant_slug = serializers.CharField()
+
+    def validate_tenant_slug(self, value):
+        try:
+            return Tenant.objects.get(subdomain=value)
+        except Tenant.DoesNotExist:
+            raise serializers.ValidationError("Invalid tenant identifier")
+
+    def create(self, validated_data):
+        tenant = validated_data.pop("tenant_slug")
+        user = CustomUser.objects.create(
+            username=validated_data["username"],
+            email=validated_data["email"],
+            tenant=tenant,
+            role="CUSTOMER"
+        )
+        user.set_password(validated_data["password"])
+        user.save()
+        return user
+
+    def to_representation(self, instance):
+        return {
+            "id": instance.id,
+            "username": instance.username,
+            "email": instance.email,
+            "tenant": instance.tenant.subdomain
+        }
