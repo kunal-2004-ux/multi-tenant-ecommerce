@@ -5,3 +5,7 @@ psycopg2-binary
 python-dotenv
 pytest
 pytest-django
+gunicorn
+whitenoise
+django-cors-headers
+dj-database-url
