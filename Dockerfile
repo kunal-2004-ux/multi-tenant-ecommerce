@@ -21,11 +21,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . .
 
+# Set a dummy secret key for collectstatic (overridden at runtime)
+ENV SECRET_KEY=dummy-key-for-build-only
+
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
 # Expose port
 EXPOSE 8000
 
-# Run the application with gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "multitenant_shop.wsgi:application"]
+# Run migrations and start server
+CMD python manage.py migrate && gunicorn --bind 0.0.0.0:8000 multitenant_shop.wsgi:application
