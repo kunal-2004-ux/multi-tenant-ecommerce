@@ -1,7 +1,10 @@
 from rest_framework import viewsets, permissions
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.db.models import Sum, Count
 from .models import Product, Order
 from .serializers import ProductSerializer, OrderSerializer
-from accounts.permissions import ProductPermission, OrderPermission
+from accounts.permissions import ProductPermission, OrderPermission, IsOwner
 
 class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
@@ -61,3 +64,30 @@ class OrderViewSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context["request"] = self.request
         return context
+
+
+class DashboardStatsView(APIView):
+    """Returns aggregate stats for the Owner Dashboard."""
+    permission_classes = [permissions.IsAuthenticated, IsOwner]
+
+    def get(self, request):
+        tenant = request.user.tenant
+        if not tenant:
+            return Response({"error": "No tenant associated with user"}, status=400)
+
+        total_products = Product.objects.filter(tenant=tenant, is_active=True).count()
+        total_orders = Order.objects.filter(tenant=tenant).count()
+        
+        # Sum revenue from paid/shipped orders only
+        revenue_result = Order.objects.filter(
+            tenant=tenant, 
+            status__in=["PAID", "SHIPPED"]
+        ).aggregate(total=Sum("total_amount"))
+        
+        total_revenue = revenue_result["total"] or 0
+
+        return Response({
+            "total_products": total_products,
+            "total_orders": total_orders,
+            "total_revenue": float(total_revenue)
+        })

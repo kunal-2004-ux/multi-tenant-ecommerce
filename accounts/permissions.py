@@ -16,8 +16,23 @@ class ProductPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
-        # Only Owner can manage products
-        return request.user and request.user.role == "OWNER"
+        # Owners and Staff can manage products
+        # Note: Granular object-level permission (assigned_to check) happens in has_object_permission or view logic
+        return request.user and request.user.role in ["OWNER", "STAFF"]
+    
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        
+        # Owners can edit anything in their tenant (handled by view queryset)
+        if request.user.role == "OWNER":
+            return True
+        
+        # Staff can only edit if assigned to them
+        if request.user.role == "STAFF":
+            return obj.assigned_to == request.user
+
+        return False
 
 class OrderPermission(permissions.BasePermission):
     def has_permission(self, request, view):

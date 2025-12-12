@@ -4,10 +4,17 @@ from .models import Product, Order, OrderItem
 from accounts.models import CustomUser
 
 class ProductSerializer(serializers.ModelSerializer):
+    assigned_to = serializers.PrimaryKeyRelatedField(
+        queryset=CustomUser.objects.filter(role='STAFF'), 
+        required=False, 
+        allow_null=True
+    )
+    assigned_to_username = serializers.CharField(source='assigned_to.username', read_only=True)
+
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'price', 'stock', 'is_active', 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
+        fields = ['id', 'name', 'description', 'price', 'stock', 'is_active', 'assigned_to', 'assigned_to_username', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at', 'assigned_to_username']
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_id = serializers.PrimaryKeyRelatedField(
@@ -23,11 +30,17 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
     customer_username = serializers.CharField(source='customer.username', read_only=True)
+    assigned_to = serializers.PrimaryKeyRelatedField(
+        queryset=CustomUser.objects.filter(role='STAFF'),
+        required=False, 
+        allow_null=True
+    )
+    assigned_to_username = serializers.CharField(source='assigned_to.username', read_only=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'status', 'total_amount', 'created_at', 'updated_at', 'items', 'customer_username']
-        read_only_fields = ['id', 'status', 'total_amount', 'created_at', 'updated_at', 'customer_username']
+        fields = ['id', 'status', 'total_amount', 'created_at', 'updated_at', 'items', 'customer_username', 'assigned_to', 'assigned_to_username']
+        read_only_fields = ['id', 'status', 'total_amount', 'created_at', 'updated_at', 'customer_username', 'assigned_to_username']
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')

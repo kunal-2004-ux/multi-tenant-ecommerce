@@ -2,7 +2,7 @@ import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-export default function ProtectedRoute({ allowedRoles }) {
+export default function ProtectedRoute({ allowedRoles, children }) {
     const { user, loading } = useAuth();
 
     if (loading) {
@@ -15,11 +15,11 @@ export default function ProtectedRoute({ allowedRoles }) {
 
     if (allowedRoles && !allowedRoles.includes(user.role)) {
         // Redirect based on role fallback or unauthorized page
-        if (user.role === "OWNER") return <Navigate to="/dashboard/stats" replace />;
-        if (user.role === "STAFF") return <Navigate to="/staff/orders" replace />;
-        if (user.role === "CUSTOMER") return <Navigate to="/shop" replace />;
+        if (user.role === "OWNER") return <Navigate to="/owner" replace />;
+        if (user.role === "STAFF") return <Navigate to="/staff" replace />;
+        if (user.role === "CUSTOMER") return <Navigate to="/customer" replace />;
         return <Navigate to="/" replace />;
     }
 
-    return <Outlet />;
+    return children ? children : <Outlet />;
 }

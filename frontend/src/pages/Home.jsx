@@ -31,16 +31,16 @@ export default function Home() {
 
                         {/* 10. Increased Line Height */}
                         <p className="text-lg text-slate-600 mb-8 leading-relaxed max-w-lg">
-                            The all-in-one infrastructure for multi-tenant e-commerce. Scale faster with isolated stores and powerful APIs — built for developers, designed for growth.
+                            The all-in-one infrastructure for multi-tenant e-commerce.
                         </p>
 
                         {/* 4. Improved CTAs */}
                         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                             <Link
-                                to="/signup/customer"
+                                to="/register-owner"
                                 className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-blue-600 text-white text-base font-semibold shadow-lg shadow-blue-600/20 hover:bg-blue-700 hover:shadow-blue-600/30 transition-all transform hover:-translate-y-0.5"
                             >
-                                Start building
+                                Create your store
                                 {/* Right Arrow Icon */}
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"></path></svg>
                             </Link>
@@ -53,10 +53,8 @@ export default function Home() {
                             </Link>
                         </div>
 
-                        {/* 6. Microcopy */}
-                        <div className="mt-3 text-xs text-slate-400 font-medium pl-1">
-                            No credit card required
-                        </div>
+
+
 
                         {/* 3. Trusted By Logo Row */}
                         <div className="mt-12 pt-8 border-t border-slate-100/60">

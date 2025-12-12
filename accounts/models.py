@@ -26,4 +26,8 @@ class CustomUser(AbstractUser):
         null=True,
         blank=True
     )
+    email = models.EmailField()
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="CUSTOMER")
+
+    class Meta:
+        unique_together = ('email', 'tenant')

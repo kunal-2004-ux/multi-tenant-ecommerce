@@ -5,12 +5,17 @@ import { useAuth } from "../../context/AuthContext";
 export default function Topbar() {
     const { user, logout } = useAuth();
 
+    // Display store name or fallback
+    const storeName = user?.tenant_name || "Multi-Tenant Shop";
+
     return (
         <header className="w-full bg-white border-b">
             <div className="container-max flex items-center justify-between h-16">
                 <Link to="/" className="flex items-center gap-3">
-                    <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 text-white font-semibold">M</div>
-                    <div className="text-lg font-semibold tracking-tight">Multi-Tenant Shop</div>
+                    <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 text-white font-semibold">
+                        {storeName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="text-lg font-semibold tracking-tight">{storeName}</div>
                 </Link>
 
                 <nav className="flex items-center gap-3">
@@ -26,6 +31,12 @@ export default function Topbar() {
                     ) : (
                         <>
                             <span className="text-sm text-slate-600 hidden md:inline">{user.username} • {user.role}</span>
+                            <Link
+                                to="/profile"
+                                className="ml-2 inline-flex px-3 py-2 rounded-lg border border-slate-200 text-slate-700 text-sm hover:bg-slate-50"
+                            >
+                                Profile
+                            </Link>
                             <button onClick={logout} className="ml-2 inline-flex px-3 py-2 rounded-lg bg-slate-900 text-white text-sm">Logout</button>
                         </>
                     )}

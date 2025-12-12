@@ -17,6 +17,8 @@ import OrderListPage from './pages/orders/OrderListPage';
 import PlaceOrderPage from './pages/orders/PlaceOrderPage';
 import CustomerSignup from './pages/auth/CustomerSignup';
 import OwnerCreateStaff from './pages/dashboard/OwnerCreateStaff';
+import ProfilePage from './pages/profile/ProfilePage';
+import StaffManagementPage from './pages/staff/StaffManagementPage';
 
 function App() {
     return (
@@ -36,6 +38,11 @@ function App() {
                     <Route path="/owner/create-staff" element={
                         <ProtectedRoute allowedRoles={['OWNER']}>
                             <AppLayout><OwnerCreateStaff /></AppLayout>
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/owner/staff" element={
+                        <ProtectedRoute allowedRoles={['OWNER']}>
+                            <AppLayout><StaffManagementPage /></AppLayout>
                         </ProtectedRoute>
                     } />
 
@@ -82,6 +89,13 @@ function App() {
                     <Route path="/orders/new" element={
                         <ProtectedRoute allowedRoles={['CUSTOMER']}>
                             <AppLayout><PlaceOrderPage /></AppLayout>
+                        </ProtectedRoute>
+                    } />
+
+                    {/* Profile Route */}
+                    <Route path="/profile" element={
+                        <ProtectedRoute allowedRoles={['OWNER', 'STAFF', 'CUSTOMER']}>
+                            <AppLayout><ProfilePage /></AppLayout>
                         </ProtectedRoute>
                     } />
 

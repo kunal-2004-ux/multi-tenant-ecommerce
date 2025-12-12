@@ -1,22 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import client from '../../api/client';
-import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const ProductListPage = () => {
-    const { user } = useAuth();
-    const navigate = useNavigate();
     const [products, setProducts] = useState([]);
+    const [staffList, setStaffList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const navigate = useNavigate();
+    const { user } = useAuth();
+
+    const isOwner = user?.role === 'OWNER';
+    const canEdit = isOwner || user?.role === 'STAFF';
 
     useEffect(() => {
         fetchProducts();
-    }, []);
+        if (isOwner) {
+            fetchStaff();
+        }
+    }, [isOwner]);
 
     const fetchProducts = async () => {
         try {
-            const response = await client.get('/products/');
+            const response = await client.get('/api/products/');
             setProducts(response.data);
             setLoading(false);
         } catch (err) {
@@ -26,14 +33,40 @@ const ProductListPage = () => {
         }
     };
 
-    const canCreate = user.role === 'OWNER' || user.role === 'STAFF';
-    const canEdit = user.role === 'OWNER' || user.role === 'STAFF';
+    const fetchStaff = async () => {
+        try {
+            const response = await client.get('/api/auth/staff/');
+            setStaffList(response.data);
+        } catch (err) {
+            console.error("Fetch Staff Error:", err);
+        }
+    };
+
+    const handleAssignProduct = async (productId, staffId, e) => {
+        // Prevent row click navigation
+        e.stopPropagation();
+
+        try {
+            const payload = { assigned_to: staffId || null };
+            await client.patch(`/api/products/${productId}/`, payload);
+
+            // Optimistic update
+            setProducts(products.map(p =>
+                p.id === productId
+                    ? { ...p, assigned_to: staffId, assigned_to_username: staffList.find(s => s.id == staffId)?.username }
+                    : p
+            ));
+        } catch (err) {
+            console.error("Assignment Error:", err);
+            alert("Failed to assign staff.");
+        }
+    };
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-800">Products</h2>
-                {canCreate && (
+                {canEdit && (
                     <button
                         onClick={() => navigate('/products/new')}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow"
@@ -55,13 +88,14 @@ const ProductListPage = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
+                                {canEdit && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>}
                                 {canEdit && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>}
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {products.length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" className="px-6 py-4 text-center text-gray-500">No products found.</td>
+                                    <td colSpan="6" className="px-6 py-4 text-center text-gray-500">No products found.</td>
                                 </tr>
                             ) : (
                                 products.map((product) => (
@@ -81,10 +115,37 @@ const ProductListPage = () => {
                                             )}
                                         </td>
                                         {canEdit && (
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {isOwner ? (
+                                                    <select
+                                                        value={product.assigned_to || ""}
+                                                        onChange={(e) => handleAssignProduct(product.id, e.target.value, e)}
+                                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-xs border p-1"
+                                                    >
+                                                        <option value="">Unassigned</option>
+                                                        {staffList.map(staff => (
+                                                            <option key={staff.id} value={staff.id}>
+                                                                {staff.username}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                ) : (
+                                                    // Staff view - just text
+                                                    product.assigned_to_username ? (
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                            {product.assigned_to_username}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-gray-400 italic">Unassigned</span>
+                                                    )
+                                                )}
+                                            </td>
+                                        )}
+                                        {canEdit && (
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <button
                                                     onClick={() => navigate(`/products/${product.id}/edit`)}
-                                                    className="text-indigo-600 hover:text-indigo-900"
+                                                    className="text-indigo-600 hover:text-indigo-900 font-semibold"
                                                 >
                                                     Edit
                                                 </button>

@@ -1,6 +1,7 @@
-import React from 'react';
-import { useAuth } from '../../context/AuthContext';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import client from '../../api/client';
 
 /* Reusable Dashboard Card */
 const StatCard = ({ title, value, subtext }) => (
@@ -17,6 +18,32 @@ const StatCard = ({ title, value, subtext }) => (
 
 export const OwnerDashboard = () => {
     const { user } = useAuth();
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const response = await client.get('/api/dashboard/stats/');
+                setStats(response.data);
+            } catch (err) {
+                console.error("Stats fetch error:", err);
+                setError("Failed to load dashboard stats.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStats();
+    }, []);
+
+    if (loading) {
+        return <div className="text-slate-600">Loading dashboard...</div>;
+    }
+
+    if (error) {
+        return <div className="bg-red-100 text-red-700 p-4 rounded">{error}</div>;
+    }
 
     return (
         <section className="space-y-8">
@@ -32,18 +59,18 @@ export const OwnerDashboard = () => {
             <div className="grid gap-6 md:grid-cols-3">
                 <StatCard
                     title="Total Products"
-                    value="12"
+                    value={stats?.total_products ?? 0}
                     subtext="Active in catalog"
                 />
                 <StatCard
                     title="Total Orders"
-                    value="45"
-                    subtext="Pending & Completed"
+                    value={stats?.total_orders ?? 0}
+                    subtext="All time"
                 />
                 <StatCard
                     title="Revenue"
-                    value="$12,450"
-                    subtext="+12% from last month"
+                    value={`$${(stats?.total_revenue ?? 0).toLocaleString()}`}
+                    subtext="From paid orders"
                 />
             </div>
 
@@ -55,18 +82,48 @@ export const OwnerDashboard = () => {
     );
 };
 
-export const StaffDashboard = () => (
-    <section className="space-y-6">
-        <div>
-            <h1 className="text-2xl font-bold text-slate-900">Staff Dashboard</h1>
-            <p className="text-slate-600">Overview of your assigned tasks.</p>
-        </div>
-        <div className="grid gap-6 md:grid-cols-2">
-            <StatCard title="Assigned Products" value="5" subtext="Products managed by you" />
-            <StatCard title="Orders to Process" value="8" subtext="Pending shipment" />
-        </div>
-    </section>
-);
+export const StaffDashboard = () => {
+    const { user } = useAuth();
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const response = await client.get('/api/auth/staff-stats/');
+                setStats(response.data);
+            } catch (err) {
+                console.error("Stats fetch error:", err);
+                setError("Failed to load dashboard stats.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStats();
+    }, []);
+
+    if (loading) {
+        return <div className="text-slate-600">Loading dashboard...</div>;
+    }
+
+    if (error) {
+        return <div className="bg-red-100 text-red-700 p-4 rounded">{error}</div>;
+    }
+
+    return (
+        <section className="space-y-6">
+            <div>
+                <h1 className="text-2xl font-bold text-slate-900">Staff Dashboard</h1>
+                <p className="text-slate-600">Overview of your assigned tasks.</p>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2">
+                <StatCard title="Assigned Products" value={stats?.assigned_products ?? 0} subtext="Products managed by you" />
+                <StatCard title="Orders to Process" value={stats?.orders_to_process ?? 0} subtext="Pending shipment" />
+            </div>
+        </section>
+    );
+};
 
 export const CustomerDashboard = () => {
     const navigate = useNavigate();

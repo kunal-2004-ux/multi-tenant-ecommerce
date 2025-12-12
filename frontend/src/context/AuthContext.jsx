@@ -20,10 +20,10 @@ export function AuthProvider({ children }) {
                         logout();
                     } else {
                         setUser({
-                            username: decoded.username || "User", // Fallback if username not in token claims, though usually we might fetch profile
+                            username: decoded.username || "User",
                             role: decoded.role,
                             tenant_id: decoded.tenant_id,
-                            ...decoded // Include other claims
+                            ...decoded
                         });
                     }
                 } catch (error) {
@@ -37,23 +37,24 @@ export function AuthProvider({ children }) {
         loadUser();
     }, []);
 
-    const login = async (username, password) => {
+    const login = async (identifier, password) => {
         try {
-            const response = await api.post("/api/auth/login/", { username, password });
-            const { access, refresh } = response.data.tokens || response.data; // Handle structure variation if any
+            const response = await api.post("/api/auth/login/", { username: identifier, password });
+            const { access, refresh } = response.data.tokens || response.data;
 
             localStorage.setItem("access", access);
             localStorage.setItem("refresh", refresh);
 
             const decoded = jwtDecode(access);
-            setUser({
-                username: decoded.username || username,
+            const userObj = {
+                username: decoded.username || identifier,
                 role: decoded.role,
                 tenant_id: decoded.tenant_id,
                 ...decoded
-            });
+            };
+            setUser(userObj);
 
-            return response.data;
+            return { user: userObj, tokens: { access, refresh } };
         } catch (error) {
             throw error;
         }
@@ -66,13 +67,14 @@ export function AuthProvider({ children }) {
         localStorage.setItem("refresh", refresh);
 
         const decoded = jwtDecode(access);
-        setUser({
+        const userObj = {
             username: decoded.username || data.owner_username,
             role: decoded.role,
             tenant_id: decoded.tenant_id,
             ...decoded
-        });
-        return response.data;
+        };
+        setUser(userObj);
+        return { user: userObj, tokens: { access, refresh } };
     };
 
     const registerCustomer = async (data) => {
@@ -82,13 +84,14 @@ export function AuthProvider({ children }) {
         localStorage.setItem("refresh", refresh);
 
         const decoded = jwtDecode(access);
-        setUser({
+        const userObj = {
             username: decoded.username || data.username,
             role: decoded.role,
             tenant_id: decoded.tenant_id,
             ...decoded
-        });
-        return response.data;
+        };
+        setUser(userObj);
+        return { user: userObj, tokens: { access, refresh } };
     }
 
     const logout = () => {
@@ -99,6 +102,7 @@ export function AuthProvider({ children }) {
 
     const value = {
         user,
+        setUser,
         login,
         logout,
         registerOwner,

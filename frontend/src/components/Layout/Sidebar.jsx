@@ -13,6 +13,7 @@ export const Sidebar = () => {
             { to: "/owner", label: "Dashboard" },
             { to: "/products", label: "Products" },
             { to: "/orders", label: "Orders" },
+            { to: "/owner/staff", label: "Manage Staff" },
             { to: "/owner/create-staff", label: "Invite Staff" },
         );
     } else if (role === "STAFF") {
