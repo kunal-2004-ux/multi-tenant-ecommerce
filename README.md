@@ -2,6 +2,15 @@
 
 A SaaS-style multi-tenant e-commerce backend built with **Django REST Framework**. Each store (tenant) operates independently with complete data isolation, role-based access control, and JWT authentication.
 
+## 🚀 Live Demo
+
+| Component | URL |
+|-----------|-----|
+| **Website** | [https://master.dtaj7dy379165.amplifyapp.com](https://master.dtaj7dy379165.amplifyapp.com) |
+| **API** | [http://13.127.168.103:8000/api/](http://13.127.168.103:8000/api/) |
+
+*Deployed on AWS Fargate (API) and AWS Amplify (Frontend)*
+
 ---
 
 ## Tech Stack
