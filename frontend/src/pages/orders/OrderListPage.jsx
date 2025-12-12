@@ -57,6 +57,22 @@ const OrderListPage = () => {
         }
     };
 
+    const handleStatusChange = async (orderId, newStatus) => {
+        try {
+            await client.patch(`/api/orders/${orderId}/`, { status: newStatus });
+
+            // Optimistic update
+            setOrders(orders.map(order =>
+                order.id === orderId
+                    ? { ...order, status: newStatus }
+                    : order
+            ));
+        } catch (err) {
+            console.error("Status Update Error:", err);
+            alert("Failed to update order status.");
+        }
+    };
+
     const toggleDetails = (orderId) => {
         setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
     };
@@ -91,13 +107,34 @@ const OrderListPage = () => {
                                     <React.Fragment key={order.id}>
                                         <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => toggleDetails(order.id)}>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{order.id}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                    ${order.status === 'PAID' ? 'bg-green-100 text-green-800' :
-                                                        order.status === 'SHIPPED' ? 'bg-blue-100 text-blue-800' :
-                                                            order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                                    {order.status}
-                                                </span>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" onClick={(e) => e.stopPropagation()}>
+                                                {(user?.role === 'OWNER' || user?.role === 'STAFF') ? (
+                                                    <select
+                                                        value={user?.role === 'OWNER' && order.status === 'SHIPPED' ? 'PAID' : order.status}
+                                                        onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                                                        className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-xs border p-1 font-semibold
+                                                            ${(order.status === 'PAID' || order.status === 'SHIPPED') ? 'bg-green-50 text-green-800' : 'bg-yellow-50 text-yellow-800'}`}
+                                                    >
+                                                        {user?.role === 'STAFF' ? (
+                                                            <>
+                                                                <option value="PENDING">PENDING</option>
+                                                                <option value="SHIPPED">SHIPPED</option>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <option value="PENDING">PENDING</option>
+                                                                <option value="PAID">PAID</option>
+                                                            </>
+                                                        )}
+                                                    </select>
+                                                ) : (
+                                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                                        ${order.status === 'SHIPPED' ? 'bg-green-100 text-green-800' :
+                                                            order.status === 'PAID' ? 'bg-blue-100 text-blue-800' :
+                                                                'bg-yellow-100 text-yellow-800'}`}>
+                                                        {order.status === 'SHIPPED' ? 'COMPLETED' : order.status}
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.total_amount}</td>
                                             {isOwner && (

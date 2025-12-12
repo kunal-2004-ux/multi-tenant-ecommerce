@@ -25,7 +25,7 @@ export default function OwnerRegister() {
         setError(null);
         try {
             await registerOwner(formData);
-            navigate("/dashboard/stats"); // Redirect to owner dashboard
+            navigate("/owner"); // Redirect to owner dashboard
         } catch (err) {
             console.error(err);
             if (err.response && err.response.data) {

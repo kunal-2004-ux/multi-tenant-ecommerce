@@ -193,6 +193,10 @@ class StaffStatsView(APIView):
         if not tenant:
             return Response({"error": "No tenant associated with user"}, status=400)
 
+        # Filter by assignment for staff
+        total_products = Product.objects.filter(tenant=tenant, is_active=True, assigned_to=user).count()
+        pending_orders = Order.objects.filter(tenant=tenant, status='PENDING', assigned_to=user).count()
+
         return Response({
             "assigned_products": total_products,
             "orders_to_process": pending_orders

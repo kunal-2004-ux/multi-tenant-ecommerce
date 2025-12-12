@@ -16,6 +16,8 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'description', 'price', 'stock', 'is_active', 'assigned_to', 'assigned_to_username', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at', 'assigned_to_username']
 
+
+
 class OrderItemSerializer(serializers.ModelSerializer):
     product_id = serializers.PrimaryKeyRelatedField(
         queryset=Product.objects.all(), source='product', write_only=True
@@ -40,7 +42,15 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ['id', 'status', 'total_amount', 'created_at', 'updated_at', 'items', 'customer_username', 'assigned_to', 'assigned_to_username']
-        read_only_fields = ['id', 'status', 'total_amount', 'created_at', 'updated_at', 'customer_username', 'assigned_to_username']
+        read_only_fields = ['id', 'total_amount', 'created_at', 'updated_at', 'customer_username', 'assigned_to_username']
+    
+    def get_fields(self):
+        fields = super().get_fields()
+        # Ensure nested serializer gets context
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and hasattr(request.user, 'tenant') and request.user.tenant:
+            fields['items'].child.context['request'] = request
+        return fields
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
