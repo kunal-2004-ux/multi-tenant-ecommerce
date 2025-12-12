@@ -225,7 +225,4 @@ multi-tenant-shop/
 ```
 
 ---
-
-## License
-
-MIT
+ 
